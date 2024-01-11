@@ -1,0 +1,161 @@
+import javax.swing.*;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+enum Posicion { PORTERO, DEFENSA, CENTROCAMPISTA, DELANTERO }
+
+abstract class Equipacion { public abstract String toString(); }
+
+class Pantalon extends Equipacion { public String toString() { return "Pantalon"; } }
+class Camiseta extends Equipacion { public String toString() { return "Camiseta"; } }
+class Zapatillas extends Equipacion { public String toString() { return "Zapatillas"; } }
+
+class Jugador {
+    private String nombre;
+    private int dorsal;
+    private Posicion posicion;
+    private ArrayList<Equipacion> equipacion;
+
+    public Jugador(String nombre, Posicion posicion) {
+        this.nombre = nombre;
+        this.posicion = posicion;
+        this.dorsal = 1;  // Just as an example, adjust as needed
+        this.equipacion = new ArrayList<>(List.of(new Pantalon(), new Camiseta(), new Zapatillas()));
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Nombre: %s, Dorsal: %d, Posición: %s, Equipación: %s", nombre, dorsal, posicion, equipacion);
+    }
+}
+
+class Equipo {
+    private String nombreEquipo, colorEquipacion1, colorEquipacion2, estadio;
+    private Jugador[] jugadores;
+
+    public Equipo(String nombreEquipo, String colorEquipacion1, String colorEquipacion2, String estadio, String[] nombresJugadores) {
+        this.nombreEquipo = nombreEquipo;
+        this.colorEquipacion1 = colorEquipacion1;
+        this.colorEquipacion2 = colorEquipacion2;
+        this.estadio = estadio;
+        this.jugadores = new Jugador[]{
+                new Jugador(nombresJugadores[0], Posicion.PORTERO),
+                new Jugador(nombresJugadores[1], Posicion.DEFENSA),
+                new Jugador(nombresJugadores[2], Posicion.CENTROCAMPISTA),
+                new Jugador(nombresJugadores[3], Posicion.DELANTERO)
+        };
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Nombre del equipo: %s\nColor de la equipación 1: %s\nColor de la equipación 2: %s\nEstadio: %s\nJugadores:\n%s",
+                nombreEquipo, colorEquipacion1, colorEquipacion2, estadio, String.join("\n", Arrays.stream(jugadores).map(Jugador::toString).toArray(String[]::new)));
+    }
+}
+
+class Liga {
+    private ArrayList<Equipo> equipos;
+    private String nombreLiga;
+
+    public Liga(String nombreLiga) {
+        this.nombreLiga = nombreLiga;
+        this.equipos = new ArrayList<>();
+    }
+
+    public void agregarEquipo(Equipo equipo) {
+        if (equipos.size() < 6) {
+            equipos.add(equipo);
+            guardarEquiposEnArchivo();
+        } else {
+            System.out.println("No se pueden agregar más equipos. Límite alcanzado.");
+        }
+    }
+
+    public ArrayList<Equipo> getEquipos() {
+        return equipos;
+    }
+
+    private void guardarEquiposEnArchivo() {
+        String filePath = "equipos.txt";
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            for (Equipo equipo : equipos) {
+                writer.write(equipo.toString());
+                writer.newLine();
+            }
+            System.out.println("Equipos guardados en el archivo 'equipos.txt'");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void cerrarArchivo() {
+        guardarEquiposEnArchivo();
+    }
+}
+
+class MenuHandler {
+    private static final int MOSTRAR_EQUIPOS = 1, CREAR_EQUIPO = 2, SALIR = 3;
+    private Liga liga;
+
+    public MenuHandler(Liga liga) { this.liga = liga; }
+
+    public void mostrarMenu() {
+        int opcion;
+        do {
+            opcion = obtenerOpcion();
+            procesarOpcion(opcion);
+        } while (opcion != SALIR);
+    }
+
+    private int obtenerOpcion() {
+        return Integer.parseInt(JOptionPane.showInputDialog("Menú:\n1. Mostrar equipos de la LIGA\n2. Crear nuevo equipo (Máx. 6)\n3. Salir"));
+    }
+
+    private void procesarOpcion(int opcion) {
+        switch (opcion) {
+            case MOSTRAR_EQUIPOS -> mostrarEquipos();
+            case CREAR_EQUIPO -> crearNuevoEquipo();
+            case SALIR -> JOptionPane.showMessageDialog(null, "Saliendo del programa.");
+            default -> JOptionPane.showMessageDialog(null, "Opción no válida. Inténtalo de nuevo.");
+        }
+    }
+
+    private void mostrarEquipos() {
+        for (Equipo equipo : liga.getEquipos()) {
+            JOptionPane.showMessageDialog(null, equipo.toString());
+        }
+    }
+
+    private void crearNuevoEquipo() {
+        if (liga.getEquipos().size() < 6) {
+            String nombreEquipo = JOptionPane.showInputDialog("Nombre del equipo:");
+            String colorEquipacion1 = JOptionPane.showInputDialog("Color de la equipación 1:");
+            String colorEquipacion2 = JOptionPane.showInputDialog("Color de la equipación 2:");
+            String estadio = JOptionPane.showInputDialog("Nombre del estadio:");
+
+            String[] nombresJugadores = new String[4];
+            nombresJugadores[0] = JOptionPane.showInputDialog("Nombre del Portero:");
+            nombresJugadores[1] = JOptionPane.showInputDialog("Nombre del Defensa:");
+            nombresJugadores[2] = JOptionPane.showInputDialog("Nombre del Centrocampista:");
+            nombresJugadores[3] = JOptionPane.showInputDialog("Nombre del Delantero:");
+
+            liga.agregarEquipo(new Equipo(nombreEquipo, colorEquipacion1, colorEquipacion2, estadio, nombresJugadores));
+        } else {
+            JOptionPane.showMessageDialog(null, "No se pueden crear más equipos. Límite alcanzado.");
+        }
+    }
+}
+
+public class Launcher {
+    public static void main(String[] args) {
+        Liga liga = new Liga("NebriChamp2022");
+        MenuHandler menuHandler = new MenuHandler(liga);
+        menuHandler.mostrarMenu();
+        liga.cerrarArchivo();
+    }
+}
+
